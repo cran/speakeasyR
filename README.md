@@ -27,16 +27,12 @@ devtools::install_github("speakeasy-2/speakeasyR")
 
 Installation with `devtools::install_github` has been tested in clean VMs running Ubuntu and Fedora.
 
-> [!TIP]
-> If an error occurs while installing, it may be that a dependency is missing. This can lead to a red hearing error that `igraph.h` can't be found but this is a consequence of an early failure. Check the output to see if it explicitly mentions a missing dependency. On Ubuntu cmake, bison, and flex were not installed by default.
-
 ### Windows
 
 To set up the development environment on Windows, install the appropriate version of [Rtools](https://cran.r-project.org/bin/windows/Rtools/) for your R install. Using Rtools' MSYS2, install the required build tools. This has been tested with ucrt64 environment but likely works in other environments.
 
 ```bash
-pacman -S mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake \
-	mingw-ucrt-w64-x86_64-libxml2 git bison flex
+pacman -S mingw-w64-ucrt-x86_64-toolchain git
 ```
 
 ## Building from source
@@ -49,6 +45,15 @@ git submodule update --init --recursive
 
 To set up the vendored dependencies.
 
-Building the source requires `cmake` and the `igraph` dependencies: `bison`, `flex`, and `libxml2`. For development `astyle` is recommended for formatting C code while `texlive`/`latex`, `qpdf`, and `checkbashims` are expected by `R` for building the documentation and checking shell scripts during the `R CMD build` process.
+For development `astyle` is recommended for formatting C code while `texlive`/`latex`, `qpdf`, and `checkbashims` are expected by `R` for building the documentation and checking shell scripts during the `R CMD build` process.
 
-It should now be possible to run `devtools::load_all()` in `R`. After the source is compiled, a `compile_commands.json` can be found in `tools/build` if needed.
+It should now be possible to run `devtools::load_all()` in `R`.
+
+## Development
+
+GNU autotools is used to generate the configuration script and files needed to run the configuration script. `R`'s build commands do not run `autoconf` instead, if changes are made to the `configuration.ac` file, `autoconf` (and possibly `autoreconf -i`) needs to be run and manually and the resulting files should be committed along with the source `configuration.ac` file.
+The `Makefile` can determine when the `autoconf` programs need to be run by either directly calling the configure target (i.e. `make configure`) or running a build target (i.e. `make build` or `make check` or similar).
+
+The `makefile` in the top level directory is intended for development. It will automate recreating committed generated files when needed. These generated files must be committed with changes to the source files that created them as they are not created by the `R CMD build` command. It should always be possible to run `R CMD build` to build the project in a clean state without needing to run `make` to generate other files. The `makefile` also sets some flags to provide stricter checks than what are run during the normal build process.
+
+As `clang` and `gcc` can behave differently changes should be tested against both. To explicitly set the compiler used run `make ${target} CC=${CC}` where target is likely `build` or `check` and CC is either `clang` or `gcc`.

@@ -1,18 +1,22 @@
+#include <speak_easy_2.h>
+
+#ifdef SE2PAR
+#  undef SE2PAR
+#endif
+
+#if IGRAPH_THREAD_SAFE
+#   define SE2PAR
+#endif
+
 #ifdef SE2PAR
 #  include <pthread.h>
 #endif
 
-#include <igraph_error.h>
-#include <igraph_structural.h>
-#include <igraph_community.h>
-#include <igraph_constructors.h>
-
-#include "speak_easy_2.h"
 #include "se2_print.h"
 #include "se2_seeding.h"
 #include "se2_random.h"
 #include "se2_modes.h"
-#include "se2_reweight_graph.h"
+#include "se2_reweigh_graph.h"
 
 igraph_bool_t greeting_printed = false;
 
@@ -171,7 +175,8 @@ static void* se2_thread_bootstrap(void* parameters)
     igraph_vector_int_t ic_store;
     igraph_vector_int_init( &ic_store, p->n_nodes);
 
-    se2_rng_init(run_i + p->opts->random_seed);
+    igraph_rng_t rng, * old_rng;
+    old_rng = se2_rng_init( &rng, run_i + p->opts->random_seed);
     igraph_integer_t n_unique = se2_seeding(p->graph, p->weights, p->kin,
                                             p->opts, &ic_store);
     igraph_vector_int_list_set(p->partition_store, partition_offset, &ic_store);
@@ -206,6 +211,8 @@ static void* se2_thread_bootstrap(void* parameters)
     }
 
     se2_core(p->graph, p->weights, p->partition_store, partition_offset, p->opts);
+
+    se2_rng_restore( &rng, old_rng);
   }
 
   return NULL;
@@ -464,6 +471,18 @@ static void se2_relabel_hierarchical_communities(igraph_vector_int_t const*
   }
 }
 
+/**
+\brief speakeasy 2 community detection.
+
+\param graph the graph to cluster.
+\param weights optional weights if the graph is weighted, use NULL for
+  unweighted.
+\param opts a speakeasy options structure (see speak_easy_2.h).
+\param memb the resulting membership vector.
+
+\return Error code:
+         Always returns success.
+*/
 igraph_error_t speak_easy_2(igraph_t* graph, igraph_vector_t* weights,
                             se2_options* opts, igraph_matrix_int_t* memb)
 {
@@ -473,7 +492,7 @@ igraph_error_t speak_easy_2(igraph_t* graph, igraph_vector_t* weights,
   if (opts->max_threads > 1) {
     se2_warn("SpeakEasy 2 was not compiled with thread support. "
              "Ignoring `max_threads`.\n\n"
-             "To suppress this warning do not set `max_threads`.");
+             "To suppress this warning do not set `max_threads`\n.");
     opts->max_threads = 1;
   }
 #endif
@@ -507,7 +526,7 @@ igraph_error_t speak_easy_2(igraph_t* graph, igraph_vector_t* weights,
 
   igraph_vector_int_t level_memb;
   igraph_vector_int_init( &level_memb, igraph_vcount(graph));
-  se2_reweight(graph, weights);
+  se2_reweigh(graph, weights);
   se2_bootstrap(graph, weights, 0, opts, &level_memb);
   igraph_matrix_int_set_row(memb, &level_memb, 0);
 
@@ -549,7 +568,7 @@ igraph_error_t speak_easy_2(igraph_t* graph, igraph_vector_t* weights,
         subgraph_weights_ptr = &subgraph_weights;
       }
 
-      se2_reweight( &subgraph, subgraph_weights_ptr);
+      se2_reweigh( &subgraph, subgraph_weights_ptr);
       se2_bootstrap( &subgraph, subgraph_weights_ptr, level, opts,
                      &subgraph_memb);
 
@@ -574,105 +593,6 @@ igraph_error_t speak_easy_2(igraph_t* graph, igraph_vector_t* weights,
   if (opts->verbose) {
     se2_printf("\n");
   }
-
-  return IGRAPH_SUCCESS;
-}
-
-static void se2_order_nodes_i(igraph_matrix_int_t const* memb,
-                              igraph_vector_int_t* initial,
-                              igraph_matrix_int_t* ordering,
-                              igraph_integer_t const level,
-                              igraph_integer_t const start,
-                              igraph_integer_t const len)
-{
-  if (len == 0) {
-    return;
-  }
-
-  if (level == igraph_matrix_int_nrow(memb)) {
-    return;
-  }
-
-  igraph_vector_int_t comm_sizes;
-  igraph_vector_int_t pos;
-
-  igraph_integer_t comm_min = IGRAPH_INTEGER_MAX;
-  igraph_integer_t comm_max = 0;
-  for (igraph_integer_t i = 0; i < len; i++) {
-    if (MATRIX(* memb, level, VECTOR(* initial)[start + i]) < comm_min) {
-      comm_min = MATRIX(* memb, level, VECTOR(* initial)[start + i]);
-    }
-
-    if (MATRIX(* memb, level, VECTOR(* initial)[start + i]) > comm_max) {
-      comm_max = MATRIX(* memb, level, VECTOR(* initial)[start + i]);
-    }
-  }
-
-  igraph_integer_t const n_communities = comm_max - comm_min + 1;
-  igraph_vector_int_init( &comm_sizes, n_communities);
-  igraph_vector_int_init( &pos, n_communities);
-
-  for (igraph_integer_t i = 0; i < len; i++) {
-    VECTOR(comm_sizes)[MATRIX(* memb, level,
-                              VECTOR(* initial)[start + i]) - comm_min]++;
-  }
-
-  igraph_vector_int_t indices;
-  igraph_vector_int_init( &indices, n_communities);
-  igraph_vector_int_qsort_ind( &comm_sizes, &indices, IGRAPH_DESCENDING);
-
-  VECTOR(pos)[VECTOR(indices)[0]] = start;
-  for (igraph_integer_t i = 1; i < n_communities; i++) {
-    VECTOR(pos)[VECTOR(indices)[i]] = VECTOR(pos)[VECTOR(indices)[i - 1]] +
-                                      VECTOR(comm_sizes)[VECTOR(indices)[i - 1]];
-  }
-
-  for (igraph_integer_t i = 0; i < len; i++) {
-    igraph_integer_t comm = MATRIX(* memb, level, VECTOR(* initial)[start + i]) -
-                            comm_min;
-    MATRIX(* ordering, level, VECTOR(pos)[comm]) = VECTOR(* initial)[start + i];
-    VECTOR(pos)[comm]++;
-  }
-  igraph_vector_int_destroy( &pos);
-
-  for (igraph_integer_t i = 0; i < len; i++) {
-    VECTOR(* initial)[start + i] = MATRIX(* ordering, level, start + i);
-  }
-
-  igraph_integer_t comm_start = start;
-  for (igraph_integer_t i = 0; i < n_communities; i++) {
-    igraph_integer_t comm_len = VECTOR(comm_sizes)[VECTOR(indices)[i]];
-    se2_order_nodes_i(memb, initial, ordering, level + 1, comm_start, comm_len);
-    comm_start += comm_len;
-  }
-  igraph_vector_int_destroy( &comm_sizes);
-  igraph_vector_int_destroy( &indices);
-}
-
-/* Return node indices of each cluster in order from largest-to-smallest
-   community. This can be used to display community structure in heat maps. */
-igraph_error_t se2_order_nodes(igraph_t const* graph,
-                               igraph_vector_t const* weights,
-                               igraph_matrix_int_t const* memb,
-                               igraph_matrix_int_t* ordering)
-{
-  igraph_integer_t const n_nodes = igraph_matrix_int_ncol(memb);
-  igraph_vector_t degrees;
-  igraph_vector_init( &degrees, n_nodes);
-  igraph_matrix_int_init(ordering, igraph_matrix_int_nrow(memb), n_nodes);
-  igraph_strength(graph, &degrees, igraph_vss_all(), IGRAPH_ALL, IGRAPH_LOOPS,
-                  weights);
-
-  // Ensure nodes are ordered by highest-lowest degree within communities.
-  igraph_vector_int_t init_ordering;
-  igraph_vector_int_init( &init_ordering, n_nodes);
-
-  igraph_vector_qsort_ind( &degrees, &init_ordering, IGRAPH_DESCENDING);
-
-  igraph_vector_destroy( &degrees);
-
-  se2_order_nodes_i(memb, &init_ordering, ordering, 0, 0, n_nodes);
-  igraph_vector_int_destroy( &init_ordering);
 
   return IGRAPH_SUCCESS;
 }

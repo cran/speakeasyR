@@ -1,9 +1,7 @@
 #ifndef SPEAK_EASY_H
 #define SPEAK_EASY_H
 
-#include "igraph_datatype.h"
-#include "igraph_vector.h"
-#include "igraph_matrix.h"
+#include <igraph.h>
 
 typedef struct {
   igraph_integer_t independent_runs;  // Number of independent runs to perform.
@@ -28,4 +26,6 @@ igraph_error_t se2_order_nodes(igraph_t const* graph,
                                igraph_vector_t const* weights,
                                igraph_matrix_int_t const* memb,
                                igraph_matrix_int_t* ordering);
+igraph_error_t se2_knn_graph(igraph_matrix_t* mat, igraph_integer_t const k,
+                             igraph_t* res, igraph_vector_t* weights);
 #endif
