@@ -42,7 +42,7 @@ igraph_integer_t igraph_i_clz32(igraph_uint_t x) {
     unsigned long index;
     return _BitScanReverse(&index, x) ? 31 - index : 32;
 #else
-    for (igraph_integer_t i = 0; i >= 0; --i) {
+    for (igraph_integer_t i = 31; i >= 0; --i) {
         if (IGRAPH_BIT_MASK(i) & x) {
             return 31 - i;
         }
@@ -370,7 +370,7 @@ igraph_error_t igraph_bitset_resize(igraph_bitset_t *bitset, igraph_integer_t ne
             IGRAPH_BIT_CLEAR(*bitset, i);
         }
         memset(bitset->stor_begin + IGRAPH_BIT_NSLOTS(bitset->size), 0,
-               sizeof(igraph_integer_t) * (IGRAPH_BIT_NSLOTS(new_size) - IGRAPH_BIT_NSLOTS(bitset->size)));
+               sizeof(igraph_uint_t) * (IGRAPH_BIT_NSLOTS(new_size) - IGRAPH_BIT_NSLOTS(bitset->size)));
     }
     bitset->size = new_size;
 
@@ -554,6 +554,100 @@ igraph_integer_t igraph_bitset_countr_one(const igraph_bitset_t *bitset) {
 
 /**
  * \ingroup bitset
+ * \function igraph_bitset_is_all_zero
+ * \brief Are all bits zeros?
+ *
+ * \experimental
+ *
+ * \param bitset The bitset object to test.
+ * \return True if none of the bits are set.
+ *
+ * Time complexity: O(n/w).
+ */
+
+igraph_bool_t igraph_bitset_is_all_zero(const igraph_bitset_t *bitset) {
+    const igraph_integer_t final_block_size = bitset->size % IGRAPH_INTEGER_SIZE ? bitset->size % IGRAPH_INTEGER_SIZE : IGRAPH_INTEGER_SIZE;
+    const igraph_integer_t slots = IGRAPH_BIT_NSLOTS(bitset->size);
+    const igraph_uint_t one = 1, zero = 0; /* to avoid the need to cast 1 and 0 to igraph_uint_t below */
+    const igraph_uint_t mask = final_block_size == IGRAPH_INTEGER_SIZE ? ~zero : ((one << final_block_size) - one);
+
+    for (igraph_integer_t i = 0; i < slots - 1; i++) {
+        if (VECTOR(*bitset)[i] != zero) {
+            return false;
+        }
+    }
+    if (bitset->size && (mask & VECTOR(*bitset)[slots - 1]) != zero) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * \ingroup bitset
+ * \function igraph_bitset_is_all_one
+ * \brief Are all bits ones?
+ *
+ * \experimental
+ *
+ * \param bitset The bitset object to test.
+ * \return True if all of the bits are set.
+ *
+ * Time complexity: O(n/w).
+ */
+
+igraph_bool_t igraph_bitset_is_all_one(const igraph_bitset_t *bitset) {
+    const igraph_integer_t final_block_size = bitset->size % IGRAPH_INTEGER_SIZE ? bitset->size % IGRAPH_INTEGER_SIZE : IGRAPH_INTEGER_SIZE;
+    const igraph_integer_t slots = IGRAPH_BIT_NSLOTS(bitset->size);
+    const igraph_uint_t one = 1, zero = 0; /* to avoid the need to cast 1 and 0 to igraph_uint_t below */
+    const igraph_uint_t mask = final_block_size == IGRAPH_INTEGER_SIZE ? zero : ~((one << final_block_size) - one);
+
+    for (igraph_integer_t i = 0; i < slots - 1; i++) {
+        if (VECTOR(*bitset)[i] != ~zero) {
+            return false;
+        }
+    }
+    if (bitset->size && (mask | VECTOR(*bitset)[slots - 1]) != ~zero) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * \ingroup bitset
+ * \function igraph_bitset_is_any_zero
+ * \brief Are any bits zeros?
+ *
+ * \experimental
+ *
+ * \param bitset The bitset object to test.
+ * \return True if at least one bit is zero.
+ *
+ * Time complexity: O(n/w).
+ */
+
+igraph_bool_t igraph_bitset_is_any_zero(const igraph_bitset_t *bitset) {
+    return ! igraph_bitset_is_all_one(bitset);
+}
+
+/**
+ * \ingroup bitset
+ * \function igraph_bitset_is_any_one
+ * \brief Are any bits ones?
+ *
+ * \experimental
+ *
+ * \param bitset The bitset object to test.
+ * \return True if at least one bit is one.
+ *
+ * Time complexity: O(n/w).
+ */
+
+igraph_bool_t igraph_bitset_is_any_one(const igraph_bitset_t *bitset) {
+    return ! igraph_bitset_is_all_zero(bitset);
+}
+
+/**
+ * \ingroup bitset
  * \function igraph_bitset_or
  * \brief Bitwise OR of two bitsets.
  *
@@ -658,6 +752,47 @@ void igraph_bitset_not(igraph_bitset_t *dest, const igraph_bitset_t *src) {
     for (igraph_integer_t i = 0; i < IGRAPH_BIT_NSLOTS(dest->size); ++i) {
         VECTOR(*dest)[i] = ~VECTOR(*src)[i];
     }
+}
+
+/**
+ * \ingroup bitset
+ * \function igraph_bitset_fill
+ * \brief Fills a bitset with a constant value.
+ *
+ * \experimental
+ *
+ * Sets all bits of a bitset to the same value.
+ *
+ * \param bitset The bitset object to modify.
+ * \param value The value to set for all bits.
+ *
+* \sa \ref igraph_bitset_null()
+ *
+ * Time complexity: O(n/w).
+ */
+
+void igraph_bitset_fill(igraph_bitset_t *bitset, igraph_bool_t value) {
+    memset(bitset->stor_begin,
+           value ? ~ (unsigned char) 0 : 0,
+           sizeof(igraph_uint_t) * IGRAPH_BIT_NSLOTS(bitset->size));
+}
+
+/**
+ * \ingroup bitset
+ * \function igraph_bitset_null
+ * \brief Clears all bits in a bitset.
+ *
+ * \experimental
+ *
+ * \param bitset The bitset object to clear all bits in.
+ *
+ * \sa \ref igraph_bitset_fill()
+ *
+ * Time complexity: O(n/w).
+ */
+
+void igraph_bitset_null(igraph_bitset_t *bitset) {
+    igraph_bitset_fill(bitset, false);
 }
 
 /**

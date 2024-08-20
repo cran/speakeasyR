@@ -1,5 +1,8 @@
 # speakeasyR Community Detection
-  [![R-CMD-check](https://github.com/SpeakEasy-2/speakeasyR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/SpeakEasy-2/speakeasyR/actions/workflows/R-CMD-check.yaml)
+
+<!-- badges: start -->
+  [![R-CMD-check](https://github.com/SpeakEasy-2/speakeasyR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/SpeakEasy-2/speakeasyR/actions/workflows/R-CMD-check.yaml) [![CRAN status](https://www.r-pkg.org/badges/version/speakeasyR)](https://CRAN.R-project.org/package=speakeasyR)
+<!-- badges: end -->
 
 This packages provides R functions for running the SpeakEasy 2 community detection algorithm using the [SpeakEasy2 C library](https://github.com/speakeasy-2/libspeakeasy2). See the [Genome Biology article](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-023-03062-0).
 
@@ -22,6 +25,14 @@ It can also be installed using `devtools`:
 ``` r
 devtools::install_github("speakeasy-2/speakeasyR")
 ```
+
+Additionally, it's possible to download the latest release from the [release page](https://github.com/SpeakEasy-2/speakeasyR/releases) (the `speakeasyR_${release}.tar.gz` asset) and install it using `install.packages`:
+
+``` r
+install.packages("speakeasyR_${release}.tar.gz")
+```
+
+Where `${release}` must be replaced with the value in the tarball's name.
 
 ### Linux
 

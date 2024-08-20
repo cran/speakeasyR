@@ -16,11 +16,22 @@
  * with SpeakEasy 2. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SE2_REWEIGHT_GRAPH_H
-#define SE2_REWEIGHT_GRAPH_H
+#ifndef SE2_INTERFACE_H
+#define SE2_INTERFACE_H
 
-#include <speak_easy_2.h>
+#include <igraph.h>
 
-igraph_error_t se2_reweigh(se2_neighs* graph);
+typedef int se2_int_printf_func_t(const char*, ...);
+typedef void se2_void_printf_func_t(const char*, ...);
+typedef igraph_bool_t se2_check_user_interrupt_func_t(void);
+
+void se2_printf(const char*, ...);
+void se2_puts(const char*);
+igraph_bool_t se2_check_user_interrupt(void);
+
+/* Only set one, this corrects for R's printf not returning an int. */
+void se2_set_int_printf_func(se2_int_printf_func_t* func);
+void se2_set_void_printf_func(se2_void_printf_func_t* func);
+void se2_set_check_user_interrupt_func(se2_check_user_interrupt_func_t* func);
 
 #endif

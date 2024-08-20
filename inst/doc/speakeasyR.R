@@ -96,11 +96,11 @@ if (requireNamespace("scRNAseq") && requireNamespace("SummarizedExperiment")) {
 ## ----subclust-----------------------------------------------------------------
 if (requireNamespace("scRNAseq") && requireNamespace("SummarizedExperiment")) {
   memb <- speakeasyR::cluster(
-     adj,
-     subcluster = 2,
-     verbose = TRUE,
-     seed = 222,
-     max_threads = 2
+    adj,
+    subcluster = 2,
+    verbose = TRUE,
+    seed = 222,
+    max_threads = 2
   )
   ordering <- speakeasyR::order_nodes(adj, memb)
 }
