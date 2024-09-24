@@ -1,6 +1,6 @@
 Package: speakeasyR
 Title: Fast and Robust Multi-Scale Graph Clustering
-Version: 0.1.3
+Version: 0.1.4
 Authors@R: c(
       person(
         "David", "Connell",
@@ -73,7 +73,9 @@ Authors@R: c(
       person("Jordi", "Hermoso", role = c("cph", "ctb"),
         comment = "Contributor to arpack."),
       person("Sébastien", "Fabbro", role = c("cph", "ctb"),
-        comment = "Contributor to arpack.")
+        comment = "Contributor to arpack."),
+      person("Shinya", "Tasaki", role = c("cph", "ctb"),
+        comment = "Provided code used in the gene clustering example.")
     )
 Description: A graph community detection algorithm that aims to be performant
     on large graphs and robust, returning consistent results across runs.
@@ -99,7 +101,7 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 SystemRequirements: arpack (optional)
 NeedsCompilation: yes
-Packaged: 2024-08-19 18:37:48 UTC; voidee
+Packaged: 2024-09-24 22:18:21 UTC; voidee
 Author: David Connell [aut, cre, cph] (<https://orcid.org/0000-0002-4841-6756>),
   Chris Gaiteri [cph] (Author of original SpeakEasy 2 algorithm.),
   Gábor Csárdi [cph, ctb] (Author of igraph C library.),
@@ -136,7 +138,9 @@ Author: David Connell [aut, cre, cph] (<https://orcid.org/0000-0002-4841-6756>),
   Elliot Paquette [cph, ctb] (Contributor to igraph.),
   Pascal Pons [cph, ctb] (Contributor to igraph.),
   Jordi Hermoso [cph, ctb] (Contributor to arpack.),
-  Sébastien Fabbro [cph, ctb] (Contributor to arpack.)
+  Sébastien Fabbro [cph, ctb] (Contributor to arpack.),
+  Shinya Tasaki [cph, ctb] (Provided code used in the gene clustering
+    example.)
 Maintainer: David Connell <david32@dcon.addy.io>
 Repository: CRAN
-Date/Publication: 2024-08-20 09:40:06 UTC
+Date/Publication: 2024-09-24 22:40:02 UTC
