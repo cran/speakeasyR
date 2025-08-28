@@ -10,10 +10,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(SE2_PARALLEL "Process independent runs in parallel" ON)
 
-# Ensures compile-commands gets location of standard includes. Needed for Nix.
-set(CMAKE_C_STANDARD_INCLUDE_DIRECTORIES
-  ${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES})
-
 find_package(Threads)
 if(SE2_PARALLEL AND NOT Threads_FOUND)
   set(SE2_PARALLEL OFF)
@@ -27,11 +23,13 @@ if("${CMAKE_PACKAGE_VERSION}" STREQUAL "")
     find_package(Git QUIET)
   endif()
 
-  execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --tags
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    OUTPUT_VARIABLE CMAKE_PACKAGE_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(GIT_FOUND)
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} describe --tags
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      OUTPUT_VARIABLE CMAKE_PACKAGE_VERSION
+      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
 endif()
 
 if("${CMAKE_PACKAGE_VERSION}" STREQUAL "")
@@ -41,13 +39,34 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/se2_version.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/se2_version.h)
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 message(STATUS "${PROJECT_NAME} version: ${CMAKE_PACKAGE_VERSION}")
 add_subdirectory(src/speakeasy2)
-target_compile_options(SpeakEasy2 PRIVATE -Wall -pedantic)
+target_compile_options(
+  SpeakEasy2
+  PRIVATE -Wall
+  -pedantic
+  -march=native
+  $<$<CONFIG:Release>:-O3>
+  $<$<CONFIG:Sanitizer>:-fsanitize=address
+  -fno-omit-frame-pointer
+  -g
+  -O0>
+  $<$<CONFIG:Profile>:-pg>)
+target_link_options(SpeakEasy2 PRIVATE $<$<CONFIG:Sanitizer>:-fsanitize=address
+  -fno-omit-frame-pointer> $<$<CONFIG:Profile>:-pg>)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Sanitizer")
   add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g -O0)
   add_link_options(-fsanitize=address -fno-omit-frame-pointer)
+elseif("${CMAKE_BUILD_TYPE}" STREQUAL "Profile")
+  set(SE2_PARALLEL OFF)
+  message(WARNING "Turning off parallel support for profiling.")
+  add_compile_options(-pg)
+  add_link_options(-pg)
 endif()
 
 get_directory_property(definitions COMPILE_DEFINITIONS)

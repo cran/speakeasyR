@@ -29,23 +29,38 @@
 igraph_error_t se2_find_most_specific_labels_i(se2_neighs const* graph,
   se2_partition* partition, se2_iterator* node_iter, igraph_integer_t* n_moved)
 {
-  se2_iterator label_iter;
-  igraph_real_t label_specificity = 0, best_label_specificity = 0;
-  igraph_integer_t best_label = -1;
+  igraph_integer_t const n_labels = partition->max_label + 1;
+  igraph_vector_t* const global_heard = partition->global_labels_heard;
+  igraph_matrix_t* const local_heard = partition->local_labels_heard;
+  igraph_vector_t* const kin = graph->kin;
+  igraph_real_t const total_weight_inv = 1 / graph->total_weight;
+
   igraph_integer_t n_moved_i = 0;
-
-  SE2_THREAD_CHECK(
-    se2_iterator_random_label_init(&label_iter, partition, false));
-  IGRAPH_FINALLY(se2_iterator_destroy, &label_iter);
-
-  igraph_integer_t node_id = 0, label_id = 0;
+  igraph_integer_t node_id = 0;
   while ((node_id = se2_iterator_next(node_iter)) != -1) {
-    while ((label_id = se2_iterator_next(&label_iter)) != -1) {
-      label_specificity =
-        se2_partition_score_label(graph, partition, node_id, label_id);
-      if ((best_label == -1) ||
-          (label_specificity >= best_label_specificity)) {
-        best_label_specificity = label_specificity;
+    igraph_real_t best_label_specificity = -INFINITY;
+    igraph_integer_t best_label = -1;
+    igraph_real_t norm_factor = VECTOR(*kin)[node_id] * total_weight_inv;
+
+    for (igraph_integer_t label_id = 0; label_id < n_labels; label_id++) {
+      /* NOTE: Because used label IDs are not necessarily contiguous, we need *
+      to loop over more iterations than labels actually used. This busts * some
+      of the compiler optimizations since we are no longer moving over * the
+      local heard matrix and global heard vector 1 element at a time. It's
+      possible repacking the labels (being careful to reorder all the label
+      based cached values)at partition commit time could improve speed since
+      this is a very hot loop. In this case n_labels becomes
+      partition->n_labels and we no longer need to check the community size is
+      non-zero.*/
+      if (VECTOR(*partition->community_sizes)[label_id] == 0) {
+        continue;
+      }
+      igraph_real_t const actual = MATRIX(*local_heard, label_id, node_id);
+      igraph_real_t const expected = VECTOR(*global_heard)[label_id];
+      igraph_real_t const score = actual - (norm_factor * expected);
+
+      if (score > best_label_specificity) {
+        best_label_specificity = score;
         best_label = label_id;
       }
     }
@@ -55,14 +70,9 @@ igraph_error_t se2_find_most_specific_labels_i(se2_neighs const* graph,
     }
 
     se2_partition_add_to_stage(partition, node_id, best_label);
-    best_label = -1;
-    se2_iterator_shuffle(&label_iter);
   }
 
   SE2_THREAD_CHECK(se2_partition_commit_changes(partition, graph));
-
-  se2_iterator_destroy(&label_iter);
-  IGRAPH_FINALLY_CLEAN(1);
 
   if (n_moved) {
     *n_moved = n_moved_i;
@@ -396,7 +406,7 @@ igraph_error_t se2_merge_well_connected_communities(se2_neighs const* graph,
   SE2_THREAD_CHECK(igraph_vector_int_init(&sort_index, max_label + 1));
   IGRAPH_FINALLY(igraph_vector_int_destroy, &sort_index);
 
-  SE2_THREAD_CHECK(igraph_vector_qsort_ind(
+  SE2_THREAD_CHECK(igraph_vector_sort_ind(
     &modularity_change, &sort_index, IGRAPH_DESCENDING));
 
   if (VECTOR(modularity_change)[VECTOR(sort_index)[0]] <=
