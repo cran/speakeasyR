@@ -1,6 +1,6 @@
-ca34f82e2d6db1aa0b499fef102c9c6f *DESCRIPTION
+64270b9e5eacb0cc40401fc14232225e *DESCRIPTION
 e44543649b45ef3f3799b8e471bbedc4 *NAMESPACE
-922e037803e4514ae9501bff7c92c743 *NEWS.md
+e9cb97b1c1c19ab72bae436972921f89 *NEWS.md
 38b650b75d98f5190b870395a0958af3 *R/cluster.R
 a01c579043f81bcbdb9f8bab9cbf09bc *R/cluster_genes.R
 2060380c29c7b9aa532aea6bdfb3c6a2 *R/knn_graph.R
@@ -11,12 +11,12 @@ f53600522f9de4b3afb22d2571db6233 *R/order_nodes.R
 e79618ab3baf9b02250ff0309a807675 *build/vignette.rds
 05d2692ad8c0642c271907304c6839b4 *cleanup
 dffd3476de5262747535bb7348d62de9 *cleanup.win
-4d92df6e0b227232ff34de51c74a6134 *configure
-93bd972c0e8b0b51d5cafc614328b063 *configure.ac
+171ca87628480834b5caf65b6e6de3b4 *configure
+4fd7274591e840379e9e8807d91f5bb2 *configure.ac
 16ba7de3b5f86240b83efaa078765a09 *configure.win
 43a1cc9bb40f7ca26eaa2ca1caca225b *inst/doc/speakeasyR.R
 0895d97a2cbf0d48e21bf52a76e8e38f *inst/doc/speakeasyR.Rmd
-e5109855bbf7bb2f89e7505cbab5b668 *inst/doc/speakeasyR.html
+186c234cf9c4da9aa84de0186056dd9e *inst/doc/speakeasyR.html
 90c03b148dee625b1506483c7e5fbfec *man/cluster.Rd
 82ce9e13b4b49908e9c26dc31c21e1e8 *man/cluster_genes.Rd
 4f6a6a23a7f0cedef7a6e91a3fd3b736 *man/knn_graph.Rd
@@ -61,7 +61,7 @@ a14bc064ac4105ee4d366487c92e87f2 *src/se2/benchmarks/nmi_dist.png
 8241aa156f5c05a5d56fdc773f3cf5df *src/se2/include/se2_version.h.in
 7b74180788bd2d6dab053815fb9d0071 *src/se2/include/speak_easy_2.h
 eff7c9233db030c776392a7b7c704192 *src/se2/src/speakeasy2/CMakeLists.txt
-bada3059d28beb40720b6955c1cb3652 *src/se2/src/speakeasy2/se2_core.c
+0b579d0ee05e576e7ecd0dc02a742764 *src/se2/src/speakeasy2/se2_core.c
 7c0036310a94291a1994ed0294b58222 *src/se2/src/speakeasy2/se2_error_handling.h
 94336dcc4ee1b6e26903d49ccc1eb3f5 *src/se2/src/speakeasy2/se2_interface.h
 835efb152a5a6f99ff89c151d432d0b0 *src/se2/src/speakeasy2/se2_knn_graph.c

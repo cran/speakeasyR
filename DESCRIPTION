@@ -1,6 +1,6 @@
 Package: speakeasyR
 Title: Fast and Robust Multi-Scale Graph Clustering
-Version: 0.1.6
+Version: 0.1.7
 Authors@R: c(
       person(
         "David", "Connell",
@@ -101,7 +101,7 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 SystemRequirements: arpack (optional)
 NeedsCompilation: yes
-Packaged: 2025-08-28 20:03:59 UTC; voidee
+Packaged: 2025-09-05 03:17:38 UTC; voidee
 Author: David Connell [aut, cre, cph] (ORCID:
     <https://orcid.org/0000-0002-4841-6756>),
   Chris Gaiteri [cph] (Author of original SpeakEasy 2 algorithm.),
@@ -144,4 +144,4 @@ Author: David Connell [aut, cre, cph] (ORCID:
     example.)
 Maintainer: David Connell <david32@dcon.addy.io>
 Repository: CRAN
-Date/Publication: 2025-08-28 20:20:02 UTC
+Date/Publication: 2025-09-05 16:50:02 UTC
